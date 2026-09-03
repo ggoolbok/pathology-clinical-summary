@@ -268,6 +268,50 @@ export const mockProcedures: ProcedureRecord[] = [
     relatedAccessionNumber: 'S26-0012',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'PROC-015' },
   },
+
+  // PT-009, PT-013, PT-014 — current biopsy procedures with minimal documentation
+  {
+    id: 'PROC-016',
+    patientId: 'PT-009',
+    category: 'biopsy',
+    procedureName: 'US-guided percutaneous liver biopsy',
+    procedureDate: '2026-09-03',
+    organSite: 'Liver, segment 4 lesion',
+    operativeFindingsSummary: 'US-guided core biopsy of new segment 4 hepatic lesion, 2 cores obtained.',
+    fullOperativeNote:
+      'US-guided percutaneous core needle biopsy of new segment 4 hepatic lesion. Two 18G cores obtained. No immediate complication. Specimen sent to pathology as accession S26-0009.',
+    relatedAccessionNumber: 'S26-0009',
+    provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'PROC-016' },
+  },
+  {
+    id: 'PROC-017',
+    patientId: 'PT-013',
+    category: 'biopsy',
+    procedureName: 'Shave biopsy',
+    procedureDate: '2026-09-02',
+    organSite: 'Skin, left forearm',
+    operativeFindingsSummary: 'Shave biopsy of pigmented lesion, left forearm.',
+    fullOperativeNote:
+      'Shave biopsy performed of pigmented lesion, left forearm, under local anesthesia. Hemostasis achieved. Specimen sent to pathology as accession S26-0013.',
+    relatedAccessionNumber: 'S26-0013',
+    provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'PROC-017' },
+  },
+  {
+    id: 'PROC-018',
+    patientId: 'PT-014',
+    category: 'biopsy',
+    procedureName: 'US-guided fine needle aspiration',
+    procedureDate: '2026-09-03',
+    organSite: 'Thyroid, right lobe nodule',
+    operativeFindingsSummary: 'US-guided FNA of right thyroid lobe nodule (TI-RADS 4).',
+    fullOperativeNote:
+      'Ultrasound-guided fine needle aspiration of the right thyroid lobe nodule. Multiple passes obtained. No immediate complication. Specimen sent to pathology as accession S26-0014.',
+    relatedAccessionNumber: 'S26-0014',
+    provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'PROC-018' },
+  },
+  // Note: PT-015's current bone marrow biopsy (S26-0015) intentionally has no linked
+  // ProcedureRecord in this mock data set, to demonstrate the "시행일 기록상 확인되지
+  // 않음" fallback when no procedure record documents the actual specimen-collection date.
 ];
 
 export function getProceduresForPatient(patientId: string): ProcedureRecord[] {

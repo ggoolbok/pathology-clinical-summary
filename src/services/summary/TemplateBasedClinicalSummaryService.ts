@@ -7,7 +7,7 @@ import type {
 } from '../../models';
 import type { RelevanceInput } from '../relevance/RuleBasedClinicalRelevanceService';
 import { isSameOrRelatedOrgan } from '../relevance/organMatch';
-import { presenceLabelKo, toDateOnly } from './textHelpers';
+import { presenceLabelKo, toDateOnly, tuberculosisActivityLabelKo } from './textHelpers';
 import { sortByDateDesc } from '../../utils/sorting';
 
 const UNKNOWN_INDICATION_KO = '적응증 확인되지 않음';
@@ -36,7 +36,6 @@ export class TemplateBasedClinicalSummaryService {
     const sections: ClinicalSummarySection[] = [
       this.buildIndicationSection(input),
       this.buildChronicDiseaseSection(input),
-      this.buildMedicationSection(input),
       this.buildMalignancyHistorySection(input),
       this.buildSameOrganPathologySection(input),
       this.buildProcedureFindingsSection(input),
@@ -53,9 +52,26 @@ export class TemplateBasedClinicalSummaryService {
     };
   }
 
+  /**
+   * 현재 생검/수술 적응증: submitted clinical information plus the actual
+   * date the current biopsy/surgery was performed. That date comes only
+   * from the ProcedureRecord that generated this specimen
+   * (relatedAccessionNumber === currentCase.accessionNumber) — never from
+   * the pathology-received date, which can legitimately differ (e.g. a
+   * gastrectomy performed a day before the specimen reaches pathology).
+   * When no such procedure record exists, the date is shown as explicitly
+   * not documented rather than fabricated or backfilled from the received date.
+   */
   private buildIndicationSection(input: RelevanceInput): ClinicalSummarySection {
+    const performingProcedure = input.procedures.find(
+      (p) => p.relatedAccessionNumber === input.currentCase.accessionNumber,
+    );
+    const dateSuffix = ` (${performingProcedure ? performingProcedure.procedureDate : '시행일 기록상 확인되지 않음'})`;
+
     const text = input.currentCase.clinicalInformationSubmitted?.trim();
-    const lines = text ? [line(text)] : [notDocumentedLine('현재 검사 적응증(제출된 임상정보)이 문서화되어 있지 않음.')];
+    const lines = text
+      ? [line(`${text}${dateSuffix}`)]
+      : [notDocumentedLine(`현재 검사 적응증(제출된 임상정보)이 문서화되어 있지 않음.${dateSuffix}`)];
     return { id: 'indication', titleKo: '현재 생검/수술 적응증', lines };
   }
 
@@ -77,8 +93,11 @@ export class TemplateBasedClinicalSummaryService {
       chronicDiagnoses,
       (d) => d.lastDocumentedDate ?? d.firstDocumentedDate,
     ).map((d) => {
-      const period = d.lastDocumentedDate ? `${d.firstDocumentedDate} ~ ${d.lastDocumentedDate}` : d.firstDocumentedDate;
-      const statusKo = d.status === 'active' ? '활동성' : d.status === 'resolved' ? '해소됨' : '과거력';
+      // General DiagnosisStatus lifecycle (활동성/해소됨/과거력) is deliberately not shown
+      // here — it stays visible in 진단 및 약물 타임라인. Tuberculosis is the sole
+      // exception: its disease-specific activityStatus is clinically meaningful and is
+      // shown only when this category is 'tuberculosis', straight from the source data.
+      const tbSuffix = d.category === 'tuberculosis' ? ` | ${tuberculosisActivityLabelKo(d.activityStatus)}` : '';
       const relatedMeds = sortByDateDesc(
         input.medications.filter((m) => m.relatedDiagnosisId === d.id),
         (m) => m.startDate,
@@ -86,7 +105,7 @@ export class TemplateBasedClinicalSummaryService {
       const subLines = relatedMeds.map((m) =>
         line(`${m.medicationName} — ${m.startDate}${m.stopDate ? `부터 ${m.stopDate}까지` : '부터 복용'}`),
       );
-      return { text: `${d.diagnosisName} 진단: ${period} (${statusKo})`, isNotDocumented: false, subLines };
+      return { text: `${d.diagnosisName} | 최초 진단 ${d.firstDocumentedDate}${tbSuffix}`, isNotDocumented: false, subLines };
     });
 
     const unknownIndicationMeds = sortByDateDesc(
@@ -111,23 +130,6 @@ export class TemplateBasedClinicalSummaryService {
       };
     }
     return { id: 'chronic-disease', titleKo: '주요 만성질환', lines: diagnosisLines };
-  }
-
-  private buildMedicationSection(input: RelevanceInput): ClinicalSummarySection {
-    if (input.medications.length === 0) {
-      return {
-        id: 'medications',
-        titleKo: '관련 약물',
-        lines: [notDocumentedLine('문서화된 관련 약물 없음 (미기재).')],
-      };
-    }
-    const lines = sortByDateDesc(input.medications, (m) => m.startDate).map((m) => {
-      const doseInfo = [m.dose, m.frequency, m.route].filter(Boolean).join(' ');
-      const stopInfo = m.stopDate ? `, 중단: ${m.stopDate}` : '';
-      const indicationInfo = m.indication ? ` — 적응증: ${m.indication}` : ` — ${UNKNOWN_INDICATION_KO}`;
-      return line(`${m.medicationName} 투여 시작: ${m.startDate}${stopInfo}${doseInfo ? ` (${doseInfo})` : ''}${indicationInfo}`);
-    });
-    return { id: 'medications', titleKo: '관련 약물', lines };
   }
 
   private buildMalignancyHistorySection(input: RelevanceInput): ClinicalSummarySection {
@@ -228,7 +230,7 @@ export class TemplateBasedClinicalSummaryService {
       };
     }
     const lines = sortByDateDesc(relevant, (r) => r.studyDate).map((r) =>
-      line(`[${r.studyDate}] ${r.studyType} — ${r.relevantFindings} / 판독 소견: ${r.impressionSummary}`),
+      line(`[${r.studyDate}] ${r.studyType} — ${r.impressionSummary}`),
     );
     return { id: 'imaging', titleKo: '최근 영상 소견', lines };
   }

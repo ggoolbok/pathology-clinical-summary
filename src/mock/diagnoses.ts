@@ -129,6 +129,22 @@ export const mockDiagnoses: DiagnosisRecord[] = [
     status: 'active',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'DX-012' },
   },
+
+  // PT-015 — treated pulmonary tuberculosis, explicitly documented as inactive.
+  // Demonstrates the tuberculosis-only activity-status exception: DiseaseActivityStatus
+  // is shown here (비활동성) while every other chronic diagnosis in the data set omits it.
+  {
+    id: 'DX-013',
+    patientId: 'PT-015',
+    diagnosisName: '폐결핵 (Pulmonary tuberculosis), treated',
+    category: 'tuberculosis',
+    firstDocumentedDate: '2015-04-03',
+    lastDocumentedDate: '2016-04-10',
+    status: 'historical',
+    notes: 'Completed 6-month anti-TB regimen 2015-2016; follow-up chest imaging and sputum studies documented disease inactivity.',
+    activityStatus: 'inactive',
+    provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'DX-013' },
+  },
 ];
 
 export function getDiagnosesForPatient(patientId: string): DiagnosisRecord[] {

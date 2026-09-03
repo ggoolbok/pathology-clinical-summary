@@ -8,9 +8,25 @@ export type DiagnosisCategory =
   | 'chronic_hepatitis'
   | 'malignancy'
   | 'transplant_related'
+  | 'tuberculosis'
   | 'other';
 
+/** General diagnosis lifecycle — whether the problem-list entry itself is still current. */
 export type DiagnosisStatus = 'active' | 'resolved' | 'historical';
+
+/**
+ * Disease-specific clinical activity, distinct from the general
+ * `DiagnosisStatus` lifecycle above. Most chronic diseases (hypertension,
+ * diabetes, CKD, malignancy history, etc.) have no clinically meaningful
+ * "activity" concept worth surfacing in the summary — whether the
+ * diagnosis is still on the problem list is enough. Tuberculosis is the
+ * one category in Version 1 where activity (active vs inactive disease)
+ * is itself an important clinical fact, so it gets its own field rather
+ * than overloading DiagnosisStatus. Only ever set from an explicit source
+ * statement — never inferred from treatment history, imaging, medication,
+ * or elapsed time.
+ */
+export type DiseaseActivityStatus = 'active' | 'inactive' | 'unknown';
 
 export interface DiagnosisRecord extends WithProvenance {
   id: string;
@@ -22,6 +38,8 @@ export interface DiagnosisRecord extends WithProvenance {
   status: DiagnosisStatus;
   /** Free-text clinical notes, only when explicitly documented in the source record. */
   notes?: string;
+  /** Only meaningful (and only ever populated) for category 'tuberculosis' — see DiseaseActivityStatus. */
+  activityStatus?: DiseaseActivityStatus;
 }
 
 export interface MedicationRecord extends WithProvenance {
