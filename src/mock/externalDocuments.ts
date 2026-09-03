@@ -1,7 +1,10 @@
 import type { ExternalClinicalDocument } from '../models';
 
-const PDF_ASSET = '/mock-assets/placeholder-external-report.pdf';
-const IMAGE_ASSET = '/mock-assets/placeholder-image-report.svg';
+// Prefixed with Vite's BASE_URL (not a hardcoded leading slash) so these still
+// resolve correctly when the app is served from a subpath, e.g. GitHub Pages'
+// https://<owner>.github.io/pathology-clinical-summary/.
+const PDF_ASSET = `${import.meta.env.BASE_URL}mock-assets/placeholder-external-report.pdf`;
+const IMAGE_ASSET = `${import.meta.env.BASE_URL}mock-assets/placeholder-image-report.svg`;
 
 /**
  * Synthetic external/scanned clinical documents. fileUrl always points to a
