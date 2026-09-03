@@ -1,4 +1,5 @@
 import type { DiagnosisRecord, MedicationRecord } from '../models';
+import { sortByDateDesc } from '../utils/sorting';
 
 const STATUS_LABEL_KO: Record<DiagnosisRecord['status'], string> = {
   active: '활동성',
@@ -6,10 +7,13 @@ const STATUS_LABEL_KO: Record<DiagnosisRecord['status'], string> = {
   historical: '과거력',
 };
 
+const UNKNOWN_INDICATION_KO = '적응증 확인되지 않음';
+
 function DiagnosisTable({ records }: { records: DiagnosisRecord[] }) {
   if (records.length === 0) {
     return <p className="rounded border border-dashed border-clinical-border px-3 py-2 text-xs italic text-clinical-muted">문서화된 진단 없음 (미기재)</p>;
   }
+  const sorted = sortByDateDesc(records, (d) => d.lastDocumentedDate ?? d.firstDocumentedDate);
   return (
     <div className="overflow-x-auto rounded border border-clinical-border">
       <table className="w-full min-w-[520px] border-collapse text-sm">
@@ -22,7 +26,7 @@ function DiagnosisTable({ records }: { records: DiagnosisRecord[] }) {
           </tr>
         </thead>
         <tbody>
-          {records.map((d) => (
+          {sorted.map((d) => (
             <tr key={d.id} className="border-t border-clinical-border">
               <td className="px-3 py-2 align-top font-medium text-clinical-text">{d.diagnosisName}</td>
               <td className="whitespace-nowrap px-3 py-2 align-top">{d.firstDocumentedDate}</td>
@@ -36,10 +40,12 @@ function DiagnosisTable({ records }: { records: DiagnosisRecord[] }) {
   );
 }
 
-function MedicationTable({ records }: { records: MedicationRecord[] }) {
+function MedicationTable({ records, diagnoses }: { records: MedicationRecord[]; diagnoses: DiagnosisRecord[] }) {
   if (records.length === 0) {
     return <p className="rounded border border-dashed border-clinical-border px-3 py-2 text-xs italic text-clinical-muted">문서화된 약물 없음 (미기재)</p>;
   }
+  const diagnosisById = new Map(diagnoses.map((d) => [d.id, d]));
+  const sorted = sortByDateDesc(records, (m) => m.startDate);
   return (
     <div className="overflow-x-auto rounded border border-clinical-border">
       <table className="w-full min-w-[640px] border-collapse text-sm">
@@ -49,22 +55,26 @@ function MedicationTable({ records }: { records: MedicationRecord[] }) {
             <th className="px-3 py-2 font-semibold">시작일</th>
             <th className="px-3 py-2 font-semibold">중단일</th>
             <th className="px-3 py-2 font-semibold">용량/빈도/경로</th>
-            <th className="px-3 py-2 font-semibold">적응증</th>
+            <th className="px-3 py-2 font-semibold">관련 진단 / 적응증</th>
           </tr>
         </thead>
         <tbody>
-          {records
-            .slice()
-            .sort((a, b) => a.startDate.localeCompare(b.startDate))
-            .map((m) => (
+          {sorted.map((m) => {
+            // Only ever resolved from an explicit relatedDiagnosisId — never guessed from the drug name.
+            const linkedDiagnosisName = m.relatedDiagnosisId ? diagnosisById.get(m.relatedDiagnosisId)?.diagnosisName : undefined;
+            const indicationDisplay = m.indication ?? linkedDiagnosisName;
+            return (
               <tr key={m.id} className="border-t border-clinical-border">
                 <td className="px-3 py-2 align-top font-medium text-clinical-text">{m.medicationName}</td>
                 <td className="whitespace-nowrap px-3 py-2 align-top">{m.startDate}</td>
                 <td className="whitespace-nowrap px-3 py-2 align-top">{m.stopDate ?? '—'}</td>
                 <td className="px-3 py-2 align-top">{[m.dose, m.frequency, m.route].filter(Boolean).join(' · ') || '미기재'}</td>
-                <td className="px-3 py-2 align-top italic text-clinical-muted">{m.indication ?? '미기재 (추정하지 않음)'}</td>
+                <td className={`px-3 py-2 align-top ${indicationDisplay ? 'text-clinical-text' : 'italic text-clinical-muted'}`}>
+                  {indicationDisplay ?? UNKNOWN_INDICATION_KO}
+                </td>
               </tr>
-            ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -87,7 +97,7 @@ export function DiagnosesMedicationsSection({
       </div>
       <div>
         <h3 className="mb-1.5 text-xs font-bold uppercase tracking-wide text-clinical-text">약물 (Medications)</h3>
-        <MedicationTable records={medications} />
+        <MedicationTable records={medications} diagnoses={diagnoses} />
       </div>
     </section>
   );

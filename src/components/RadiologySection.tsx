@@ -1,4 +1,5 @@
 import type { RadiologyRecord } from '../models';
+import { sortByDateDesc } from '../utils/sorting';
 import { DocumentIcon } from './PriorityTag';
 
 export function RadiologySection({
@@ -8,7 +9,7 @@ export function RadiologySection({
   records: RadiologyRecord[];
   onOpenRecord: (record: RadiologyRecord) => void;
 }) {
-  const sorted = records.slice().sort((a, b) => b.studyDate.localeCompare(a.studyDate));
+  const sorted = sortByDateDesc(records, (r) => r.studyDate);
 
   return (
     <section>

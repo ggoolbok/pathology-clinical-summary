@@ -15,6 +15,7 @@ import type {
 } from '../../models';
 import { clinicalRelevanceProfiles } from '../../config/clinicalRelevanceProfiles';
 import { isSameOrRelatedOrgan, textContainsKeyword } from './organMatch';
+import { classifyProcedureRelevance } from './classifyProcedureRelevance';
 
 export interface RelevanceInput {
   currentCase: CurrentPathologyCase;
@@ -100,7 +101,8 @@ export class RuleBasedClinicalRelevanceService {
       if (r.relatedAccessionNumber === currentCase.accessionNumber) {
         return item('procedure', r.id, 'highest', 'procedure_generated_current_specimen', '현재 검체를 생성한 시술/수술');
       }
-      if (isSameOrRelatedOrgan(r.organSite, currentCase.organSite)) {
+      // Same "related vs other" classification the Procedures UI uses for its A/B split.
+      if (classifyProcedureRelevance(r, currentCase) === 'related') {
         return item('procedure', r.id, 'high', 'same_organ_procedure_history', '동일 장기 관련 시술/수술 이력');
       }
       return item('procedure', r.id, 'important', 'other_procedure_history', '기타 시술/수술 이력');

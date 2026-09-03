@@ -8,6 +8,11 @@ const IMAGE_ASSET = '/mock-assets/placeholder-image-report.svg';
  * local synthetic placeholder asset (see /public/mock-assets) — never a
  * real scanned document. Version 1 never OCRs or auto-interprets these;
  * the app only surfaces relevance and lets the pathologist open the original.
+ * Every record is `extractionStatus: 'not_processed'` — Version 1 does not
+ * populate extractedFields/extractedText/verifiedBy/verifiedAt for any
+ * document; those fields exist only so a future OCR pipeline can be added
+ * without reshaping this model. See ExtractionStatus in
+ * src/models/externalDocument.ts.
  */
 export const mockExternalDocuments: ExternalClinicalDocument[] = [
   // PT-001 — kidney transplant: DSA
@@ -21,6 +26,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileUrl: PDF_ASSET,
     organSite: 'Kidney (transplant allograft)',
     notes: 'Ordered as part of rising-creatinine workup prior to allograft biopsy.',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-001' },
   },
 
@@ -34,6 +40,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileType: 'image',
     fileUrl: IMAGE_ASSET,
     organSite: 'Kidney (native)',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-002' },
   },
   {
@@ -45,6 +52,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileType: 'image',
     fileUrl: IMAGE_ASSET,
     organSite: 'Kidney (native)',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-003' },
   },
   {
@@ -56,6 +64,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileType: 'pdf',
     fileUrl: PDF_ASSET,
     organSite: 'Kidney (native)',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-004' },
   },
   {
@@ -67,6 +76,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileType: 'pdf',
     fileUrl: PDF_ASSET,
     organSite: 'Kidney (native)',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-005' },
   },
 
@@ -80,6 +90,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileType: 'pdf',
     fileUrl: PDF_ASSET,
     organSite: 'Lymph node, cervical',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-006' },
   },
   {
@@ -91,6 +102,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileType: 'pdf',
     fileUrl: PDF_ASSET,
     organSite: 'Lymph node, cervical',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-007' },
   },
 
@@ -105,6 +117,7 @@ export const mockExternalDocuments: ExternalClinicalDocument[] = [
     fileUrl: PDF_ASSET,
     organSite: 'Liver',
     notes: 'Scanned referral labs from outside hospital prior to transfer of care.',
+    extractionStatus: 'not_processed',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'EXT-008' },
   },
 ];

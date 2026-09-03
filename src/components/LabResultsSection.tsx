@@ -1,19 +1,7 @@
 import type { LabResult } from '../models';
 import { toDateOnly } from '../services/summary/textHelpers';
-
-const FLAG_LABEL_KO: Record<NonNullable<LabResult['flag']>, string> = {
-  H: '높음',
-  L: '낮음',
-  N: '정상',
-  critical: '위험',
-};
-
-const FLAG_CLASS: Record<NonNullable<LabResult['flag']>, string> = {
-  H: 'text-clinical-highest',
-  L: 'text-clinical-accent',
-  N: 'text-clinical-muted',
-  critical: 'text-clinical-highest font-bold',
-};
+import { sortByDateDesc } from '../utils/sorting';
+import { LAB_FLAG_LABEL_KO, labFlagValueClassName } from '../utils/labFlag';
 
 export function LabResultsSection({
   relevantTestCodes,
@@ -32,14 +20,11 @@ export function LabResultsSection({
     byCode.set(l.testCode, list);
   }
 
+  // Newest first, per the app-wide reverse-chronological timeline rule.
   const groups = Array.from(byCode.entries()).map(([code, results]) => ({
     code,
     testName: results[0].testName,
-    recent: results
-      .slice()
-      .sort((a, b) => b.dateTime.localeCompare(a.dateTime))
-      .slice(0, 3)
-      .reverse(),
+    recent: sortByDateDesc(results, (r) => r.dateTime).slice(0, 3),
   }));
 
   return (
@@ -70,13 +55,13 @@ export function LabResultsSection({
                   {g.recent.map((r) => (
                     <tr key={r.id} className="border-t border-clinical-border/60">
                       <td className="py-1 pr-2 text-clinical-muted">{toDateOnly(r.dateTime)}</td>
-                      <td className="py-1 pr-2 font-medium text-clinical-text">
+                      <td className={`py-1 pr-2 font-medium ${labFlagValueClassName(r.flag)}`}>
                         {r.value}
                         {r.unit ? ` ${r.unit}` : ''}
                       </td>
                       <td className="py-1 pr-2 text-clinical-muted">{r.referenceRange ?? '미기재'}</td>
-                      <td className={`py-1 font-semibold ${r.flag ? FLAG_CLASS[r.flag] : 'text-clinical-muted'}`}>
-                        {r.flag ? FLAG_LABEL_KO[r.flag] : '—'}
+                      <td className={`py-1 font-semibold ${labFlagValueClassName(r.flag)}`}>
+                        {r.flag ? LAB_FLAG_LABEL_KO[r.flag] : '—'}
                       </td>
                     </tr>
                   ))}

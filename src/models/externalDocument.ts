@@ -20,10 +20,36 @@ export type ExternalReportType =
 export type ExternalDocumentFileType = 'image' | 'pdf';
 
 /**
+ * Where a document sits in the future OCR/structured-extraction workflow:
+ *
+ *   original scanned report
+ *     → OCR / document extraction        (not_processed → extracted)
+ *     → structured candidate values      (extracted)
+ *     → compare with original image      (needs_verification)
+ *     → human verification               (verified, or failed if rejected)
+ *
+ * Version 1 does not implement OCR: every mock document is
+ * 'not_processed', and no code path may fabricate a value for any other
+ * status. This field exists so a later version can add real extraction
+ * without reshaping the model or the UI's original-vs-extracted-vs-verified
+ * distinction.
+ */
+export type ExtractionStatus = 'not_processed' | 'extracted' | 'needs_verification' | 'verified' | 'failed';
+
+/** One candidate key/value pair proposed by (future) OCR/extraction — never trusted until verified. */
+export interface ExtractedField {
+  label: string;
+  value: string;
+}
+
+/**
  * A scanned/attached external clinical document (report or image) that is
  * not represented as structured lab data. Version 1 never interprets the
  * content automatically — it only identifies relevance and lets the
- * pathologist open the original.
+ * pathologist open the original. The extraction/verification fields below
+ * are the seam for a future OCR pipeline; they are optional and unpopulated
+ * in Version 1's mock data so the UI never presents unverified candidate
+ * data as trusted clinical fact.
  */
 export interface ExternalClinicalDocument extends WithProvenance {
   id: string;
@@ -36,4 +62,20 @@ export interface ExternalClinicalDocument extends WithProvenance {
   fileUrl: string;
   organSite?: string;
   notes?: string;
+  /** Defaults to 'not_processed' in Version 1 — see ExtractionStatus. */
+  extractionStatus: ExtractionStatus;
+  /** Only meaningful once extractionStatus is 'extracted' or later. Never fabricated in Version 1. */
+  extractedFields?: ExtractedField[];
+  extractedText?: string;
+  /** Set only once a human has reviewed the extracted candidate data against the original. */
+  verifiedBy?: string;
+  verifiedAt?: string;
 }
+
+export const EXTRACTION_STATUS_LABEL_KO: Record<ExtractionStatus, string> = {
+  not_processed: '자동 추출 미처리 · 원본만 확인 가능',
+  extracted: '자동 추출 완료 · 미검증',
+  needs_verification: '검증 필요',
+  verified: '검증 완료',
+  failed: '자동 추출 실패',
+};

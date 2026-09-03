@@ -3,10 +3,14 @@ import type {
   ClinicalSummary,
   ClinicalSummaryLine,
   ClinicalSummarySection,
+  LabTrendPoint,
 } from '../../models';
 import type { RelevanceInput } from '../relevance/RuleBasedClinicalRelevanceService';
 import { isSameOrRelatedOrgan } from '../relevance/organMatch';
 import { presenceLabelKo, toDateOnly } from './textHelpers';
+import { sortByDateDesc } from '../../utils/sorting';
+
+const UNKNOWN_INDICATION_KO = '적응증 확인되지 않음';
 
 function line(text: string, isNotDocumented = false): ClinicalSummaryLine {
   return { text, isNotDocumented };
@@ -23,6 +27,9 @@ function notDocumentedLine(text: string): ClinicalSummaryLine {
  * here infers or fabricates a finding, and every section that has no
  * documented content says so explicitly rather than being silently blank
  * (so "not documented" is never confused with a real negative finding).
+ *
+ * All lists here use the shared `sortByDateDesc` utility (newest first),
+ * per the app-wide reverse-chronological timeline rule.
  */
 export class TemplateBasedClinicalSummaryService {
   generate(input: RelevanceInput, relevance: ClinicalRelevanceResult): ClinicalSummary {
@@ -52,21 +59,58 @@ export class TemplateBasedClinicalSummaryService {
     return { id: 'indication', titleKo: '현재 생검/수술 적응증', lines };
   }
 
+  /**
+   * 주요 만성질환: each chronic disease line nests the medications explicitly
+   * linked to it (via MedicationRecord.relatedDiagnosisId — never inferred
+   * from drug-class knowledge or name matching), showing when the disease
+   * was first documented and when each medication started. Any medication
+   * with no such explicit link is collected under a single
+   * "적응증 미확인 약물" line instead of being silently omitted.
+   */
   private buildChronicDiseaseSection(input: RelevanceInput): ClinicalSummarySection {
-    const relevant = input.diagnoses.filter((d) => d.category !== 'malignancy');
-    if (relevant.length === 0) {
+    const chronicDiagnoses = input.diagnoses.filter((d) => d.category !== 'malignancy');
+    const linkedMedicationIds = new Set(
+      input.medications.filter((m) => m.relatedDiagnosisId).map((m) => m.id),
+    );
+
+    const diagnosisLines: ClinicalSummaryLine[] = sortByDateDesc(
+      chronicDiagnoses,
+      (d) => d.lastDocumentedDate ?? d.firstDocumentedDate,
+    ).map((d) => {
+      const period = d.lastDocumentedDate ? `${d.firstDocumentedDate} ~ ${d.lastDocumentedDate}` : d.firstDocumentedDate;
+      const statusKo = d.status === 'active' ? '활동성' : d.status === 'resolved' ? '해소됨' : '과거력';
+      const relatedMeds = sortByDateDesc(
+        input.medications.filter((m) => m.relatedDiagnosisId === d.id),
+        (m) => m.startDate,
+      );
+      const subLines = relatedMeds.map((m) =>
+        line(`${m.medicationName} — ${m.startDate}${m.stopDate ? `부터 ${m.stopDate}까지` : '부터 복용'}`),
+      );
+      return { text: `${d.diagnosisName} 진단: ${period} (${statusKo})`, isNotDocumented: false, subLines };
+    });
+
+    const unknownIndicationMeds = sortByDateDesc(
+      input.medications.filter((m) => !linkedMedicationIds.has(m.id)),
+      (m) => m.startDate,
+    );
+    if (unknownIndicationMeds.length > 0) {
+      diagnosisLines.push({
+        text: '적응증 미확인 약물',
+        isNotDocumented: false,
+        subLines: unknownIndicationMeds.map((m) =>
+          notDocumentedLine(`${m.medicationName} — ${m.startDate}${m.stopDate ? `부터 ${m.stopDate}까지` : '부터 복용'} (${UNKNOWN_INDICATION_KO})`),
+        ),
+      });
+    }
+
+    if (diagnosisLines.length === 0) {
       return {
         id: 'chronic-disease',
         titleKo: '주요 만성질환',
         lines: [notDocumentedLine('문서화된 주요 만성질환 없음 (미기재).')],
       };
     }
-    const lines = relevant.map((d) => {
-      const period = d.lastDocumentedDate ? `${d.firstDocumentedDate} ~ ${d.lastDocumentedDate}` : d.firstDocumentedDate;
-      const statusKo = d.status === 'active' ? '활동성' : d.status === 'resolved' ? '해소됨' : '과거력';
-      return line(`${d.diagnosisName} 진단: ${period} (${statusKo})`);
-    });
-    return { id: 'chronic-disease', titleKo: '주요 만성질환', lines };
+    return { id: 'chronic-disease', titleKo: '주요 만성질환', lines: diagnosisLines };
   }
 
   private buildMedicationSection(input: RelevanceInput): ClinicalSummarySection {
@@ -77,15 +121,12 @@ export class TemplateBasedClinicalSummaryService {
         lines: [notDocumentedLine('문서화된 관련 약물 없음 (미기재).')],
       };
     }
-    const lines = input.medications
-      .slice()
-      .sort((a, b) => a.startDate.localeCompare(b.startDate))
-      .map((m) => {
-        const doseInfo = [m.dose, m.frequency, m.route].filter(Boolean).join(' ');
-        const stopInfo = m.stopDate ? `, 중단: ${m.stopDate}` : '';
-        const indicationInfo = m.indication ? ` — 적응증: ${m.indication}` : '';
-        return line(`${m.medicationName} 투여 시작: ${m.startDate}${stopInfo}${doseInfo ? ` (${doseInfo})` : ''}${indicationInfo}`);
-      });
+    const lines = sortByDateDesc(input.medications, (m) => m.startDate).map((m) => {
+      const doseInfo = [m.dose, m.frequency, m.route].filter(Boolean).join(' ');
+      const stopInfo = m.stopDate ? `, 중단: ${m.stopDate}` : '';
+      const indicationInfo = m.indication ? ` — 적응증: ${m.indication}` : ` — ${UNKNOWN_INDICATION_KO}`;
+      return line(`${m.medicationName} 투여 시작: ${m.startDate}${stopInfo}${doseInfo ? ` (${doseInfo})` : ''}${indicationInfo}`);
+    });
     return { id: 'medications', titleKo: '관련 약물', lines };
   }
 
@@ -98,7 +139,7 @@ export class TemplateBasedClinicalSummaryService {
         lines: [notDocumentedLine('문서화된 이전 악성종양 병력 없음 (미기재).')],
       };
     }
-    const lines = malignantPathology.map((p) =>
+    const lines = sortByDateDesc(malignantPathology, (p) => p.diagnosisDate).map((p) =>
       line(`[${p.pathologyNumber}] ${p.diagnosisDate} — ${p.organSite}: ${p.diagnosisSummary}`),
     );
     return { id: 'malignancy-history', titleKo: '이전 악성종양 병력 (장기 무관)', lines };
@@ -115,17 +156,20 @@ export class TemplateBasedClinicalSummaryService {
         lines: [notDocumentedLine('현재 장기에 대한 이전 병리 기록 없음 (미기재).')],
       };
     }
-    const lines = sameOrgan.map((p) =>
+    const lines = sortByDateDesc(sameOrgan, (p) => p.diagnosisDate).map((p) =>
       line(`[${p.pathologyNumber}] ${p.diagnosisDate} — ${p.organSite}: ${p.diagnosisSummary}`),
     );
     return { id: 'same-organ-pathology', titleKo: '현재 장기의 이전 병리 소견', lines };
   }
 
   private buildProcedureFindingsSection(input: RelevanceInput): ClinicalSummarySection {
-    const relatedProcedures = input.procedures.filter(
-      (p) =>
-        p.relatedAccessionNumber === input.currentCase.accessionNumber ||
-        isSameOrRelatedOrgan(p.organSite, input.currentCase.organSite),
+    const relatedProcedures = sortByDateDesc(
+      input.procedures.filter(
+        (p) =>
+          p.relatedAccessionNumber === input.currentCase.accessionNumber ||
+          isSameOrRelatedOrgan(p.organSite, input.currentCase.organSite),
+      ),
+      (p) => p.procedureDate,
     );
     if (relatedProcedures.length === 0) {
       return {
@@ -183,13 +227,19 @@ export class TemplateBasedClinicalSummaryService {
         lines: [notDocumentedLine('관련 영상 기록 없음 (미기재).')],
       };
     }
-    const lines = relevant
-      .slice()
-      .sort((a, b) => b.studyDate.localeCompare(a.studyDate))
-      .map((r) => line(`[${r.studyDate}] ${r.studyType} — ${r.relevantFindings} / 판독 소견: ${r.impressionSummary}`));
+    const lines = sortByDateDesc(relevant, (r) => r.studyDate).map((r) =>
+      line(`[${r.studyDate}] ${r.studyType} — ${r.relevantFindings} / 판독 소견: ${r.impressionSummary}`),
+    );
     return { id: 'imaging', titleKo: '최근 영상 소견', lines };
   }
 
+  /**
+   * 관련 검사 추세: one line per test, newest value on the LEFT ("LATEST ←
+   * OLDER ← OLDEST"), value immediately followed by its date in parentheses
+   * — no colon between them. Each line also carries structured `labTrend`
+   * points so the UI can color abnormal values (H red / L blue) using the
+   * shared lab-flag utility instead of re-parsing the text.
+   */
   private buildLabTrendSection(input: RelevanceInput, relevance: ClinicalRelevanceResult): ClinicalSummarySection {
     const relevantCodes = new Set(relevance.relevantLabTestCodes);
     const relevantLabs = input.labResults.filter((l) => relevantCodes.has(l.testCode));
@@ -208,12 +258,17 @@ export class TemplateBasedClinicalSummaryService {
     }
     const lines: ClinicalSummaryLine[] = [];
     for (const [, results] of byCode) {
-      const sorted = results.slice().sort((a, b) => a.dateTime.localeCompare(b.dateTime)).slice(-3);
-      const testName = sorted[0].testName;
-      const trend = sorted
-        .map((r) => `${toDateOnly(r.dateTime)}: ${r.value}${r.unit ? ` ${r.unit}` : ''}${r.flag && r.flag !== 'N' ? ` (${r.flag})` : ''}`)
-        .join(' → ');
-      lines.push(line(`${testName}: ${trend}`));
+      const newestFirst = sortByDateDesc(results, (r) => r.dateTime).slice(0, 3);
+      const testName = newestFirst[0].testName;
+      const points: LabTrendPoint[] = newestFirst.map((r) => ({
+        value: r.value,
+        flag: r.flag,
+        date: toDateOnly(r.dateTime),
+      }));
+      const chain = points
+        .map((p) => `${p.value}${p.flag === 'H' ? ' H' : p.flag === 'L' ? ' L' : ''} (${p.date})`)
+        .join(' ← ');
+      lines.push({ text: `${testName} ${chain}`, isNotDocumented: false, labTrend: { testName, points } });
     }
     return { id: 'lab-trends', titleKo: '관련 검사 추세', lines };
   }
@@ -223,7 +278,10 @@ export class TemplateBasedClinicalSummaryService {
     relevance: ClinicalRelevanceResult,
   ): ClinicalSummarySection {
     const relevantTypes = new Set(relevance.relevantExternalReportTypes);
-    const relevantDocs = input.externalDocuments.filter((d) => relevantTypes.has(d.reportType));
+    const relevantDocs = sortByDateDesc(
+      input.externalDocuments.filter((d) => relevantTypes.has(d.reportType)),
+      (d) => d.reportDate,
+    );
     if (relevantDocs.length === 0) {
       return {
         id: 'external-report-availability',

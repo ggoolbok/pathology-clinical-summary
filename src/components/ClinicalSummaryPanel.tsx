@@ -1,4 +1,50 @@
-import type { ClinicalSummary } from '../models';
+import type { ClinicalSummary, ClinicalSummaryLine } from '../models';
+import { labFlagSuffix, labFlagValueClassName } from '../utils/labFlag';
+
+function LabTrendChain({ points }: { points: NonNullable<ClinicalSummaryLine['labTrend']>['points'] }) {
+  return (
+    <div className="text-sm leading-relaxed text-clinical-text">
+      {points.map((p, idx) => (
+        <span key={idx}>
+          {idx > 0 && <span className="text-clinical-muted"> ← </span>}
+          <span className={labFlagValueClassName(p.flag)}>
+            {p.value}
+            {labFlagSuffix(p.flag) && ` ${labFlagSuffix(p.flag)}`}
+          </span>{' '}
+          <span className="text-clinical-muted">({p.date})</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SummaryLine({ line, depth = 0 }: { line: ClinicalSummaryLine; depth?: number }) {
+  return (
+    <li className={depth > 0 ? 'mt-0.5' : ''}>
+      {line.labTrend ? (
+        <div>
+          <div className="text-sm font-semibold text-clinical-text">{line.labTrend.testName}</div>
+          <LabTrendChain points={line.labTrend.points} />
+        </div>
+      ) : (
+        <div
+          className={`text-sm leading-relaxed ${
+            line.isNotDocumented ? 'italic text-clinical-muted' : 'text-clinical-text'
+          } ${depth > 0 ? 'text-xs' : ''}`}
+        >
+          {line.text}
+        </div>
+      )}
+      {line.subLines && line.subLines.length > 0 && (
+        <ul className="mt-0.5 space-y-0.5 border-l-2 border-clinical-border pl-3">
+          {line.subLines.map((sub, idx) => (
+            <SummaryLine key={idx} line={sub} depth={depth + 1} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
 
 export function ClinicalSummaryPanel({ summary }: { summary: ClinicalSummary }) {
   return (
@@ -11,16 +57,9 @@ export function ClinicalSummaryPanel({ summary }: { summary: ClinicalSummary }) 
         {summary.sections.map((section) => (
           <div key={section.id}>
             <h3 className="mb-1.5 text-xs font-bold uppercase tracking-wide text-clinical-text">{section.titleKo}</h3>
-            <ul className="space-y-1">
+            <ul className="space-y-1.5">
               {section.lines.map((l, idx) => (
-                <li
-                  key={idx}
-                  className={`text-sm leading-relaxed ${
-                    l.isNotDocumented ? 'italic text-clinical-muted' : 'text-clinical-text'
-                  }`}
-                >
-                  {l.text}
-                </li>
+                <SummaryLine key={idx} line={l} />
               ))}
             </ul>
           </div>

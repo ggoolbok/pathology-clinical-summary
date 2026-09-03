@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { DrawerContent } from './DrawerContent';
+import { EXTRACTION_STATUS_LABEL_KO } from '../../models';
 import { getExternalReportDefinition } from '../../config/externalReportDefinitions';
 import { PathologyDetailView } from './PathologyDetailView';
 import { ProcedureDetailView } from './ProcedureDetailView';
@@ -77,6 +78,9 @@ export function DetailDrawer({ content, onClose }: DetailDrawerProps) {
             <p className="mt-0.5 text-xs text-clinical-muted">
               기록일 {recordDate} · 원본 기록 ID {sourceRecordId}
             </p>
+            {content.kind === 'external_document' && (
+              <p className="mt-0.5 text-xs text-clinical-muted">{EXTRACTION_STATUS_LABEL_KO[content.record.extractionStatus]}</p>
+            )}
           </div>
           <button
             type="button"

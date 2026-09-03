@@ -1,5 +1,7 @@
 import type { ExternalClinicalDocument, ExternalReportType } from '../models';
+import { EXTRACTION_STATUS_LABEL_KO } from '../models';
 import { getExternalReportDefinition } from '../config/externalReportDefinitions';
+import { sortByDateDesc } from '../utils/sorting';
 import { DocumentIcon } from './PriorityTag';
 
 export function ExternalDocumentsSection({
@@ -12,7 +14,10 @@ export function ExternalDocumentsSection({
   onOpenRecord: (record: ExternalClinicalDocument) => void;
 }) {
   const relevantSet = new Set(relevantReportTypes);
-  const relevant = allDocuments.filter((d) => relevantSet.has(d.reportType));
+  const relevant = sortByDateDesc(
+    allDocuments.filter((d) => relevantSet.has(d.reportType)),
+    (d) => d.reportDate,
+  );
 
   return (
     <section>
@@ -44,6 +49,7 @@ export function ExternalDocumentsSection({
                     {def.label} · {d.reportDate}
                     {d.organSite ? ` · ${d.organSite}` : ''}
                   </div>
+                  <div className="mt-0.5 text-xxs text-clinical-muted">{EXTRACTION_STATUS_LABEL_KO[d.extractionStatus]}</div>
                 </div>
                 <span className="shrink-0 rounded bg-clinical-bg px-1.5 py-0.5 text-xxs uppercase text-clinical-muted">{def.viewerType}</span>
               </li>

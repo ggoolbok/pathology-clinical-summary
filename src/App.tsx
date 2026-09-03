@@ -8,6 +8,7 @@ import { TemplateBasedClinicalSummaryService } from './services/summary/Template
 import { Worklist } from './components/Worklist';
 import { CurrentCaseHeader } from './components/CurrentCaseHeader';
 import { ClinicalSummaryPanel } from './components/ClinicalSummaryPanel';
+import { MajorSurgerySection } from './components/MajorSurgerySection';
 import { PreviousPathologySection } from './components/PreviousPathologySection';
 import { DiagnosesMedicationsSection } from './components/DiagnosesMedicationsSection';
 import { ProceduresSection } from './components/ProceduresSection';
@@ -103,6 +104,10 @@ export default function App() {
             <CurrentCaseHeader currentCase={bundle.currentCase} />
             <div className="space-y-6 px-6 py-5">
               <ClinicalSummaryPanel summary={summary} />
+              <MajorSurgerySection
+                records={bundle.procedures}
+                onOpenRecord={(record) => setDrawerContent({ kind: 'procedure', record })}
+              />
               <PreviousPathologySection
                 records={bundle.previousPathology}
                 currentOrganSite={bundle.currentCase.organSite}
@@ -111,6 +116,7 @@ export default function App() {
               <DiagnosesMedicationsSection diagnoses={bundle.diagnoses} medications={bundle.medications} />
               <ProceduresSection
                 records={bundle.procedures}
+                currentCase={bundle.currentCase}
                 onOpenRecord={(record) => setDrawerContent({ kind: 'procedure', record })}
               />
               <RadiologySection

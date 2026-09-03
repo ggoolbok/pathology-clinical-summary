@@ -35,4 +35,15 @@ export interface MedicationRecord extends WithProvenance {
   route?: string;
   /** Only populated when the indication is explicitly stated in the source record — never inferred. */
   indication?: string;
+  /**
+   * Structured pointer to the DiagnosisRecord this medication explicitly
+   * treats, per the source record. This is deliberately a hard reference,
+   * not a name/text match against `DiagnosisRecord.diagnosisName` — matching
+   * by drug-class knowledge or fuzzy text would be exactly the kind of
+   * inference the app must never do. Leave unset whenever the source
+   * record does not explicitly document which condition a medication is
+   * for; the UI then shows the medication under "적응증 확인되지 않음"
+   * rather than guessing.
+   */
+  relatedDiagnosisId?: string;
 }

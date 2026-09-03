@@ -117,7 +117,8 @@ export const mockProcedures: ProcedureRecord[] = [
     procedureName: 'Laparoscopic appendectomy',
     procedureDate: '2026-09-02',
     organSite: 'Appendix',
-    surgeon: 'Dr. S. Kwon',
+    // Surgeon intentionally not documented in this operative note — demonstrates the
+    // "기록상 확인되지 않음" fallback rather than a fabricated name.
     operativeFindingsSummary: 'Acute appendicitis. Operative note does not comment on perforation, peritonitis, abscess, or gangrenous change.',
     appendectomyFindings: {
       perforation: 'not_documented',

@@ -10,6 +10,8 @@ export const mockMedications: MedicationRecord[] = [
     dose: '5 mg',
     frequency: 'QD',
     route: 'oral',
+    indication: 'Hypertension',
+    relatedDiagnosisId: 'DX-001',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-001' },
   },
   {
@@ -20,6 +22,8 @@ export const mockMedications: MedicationRecord[] = [
     dose: '50 mg',
     frequency: 'QD',
     route: 'oral',
+    indication: 'Hypertension',
+    relatedDiagnosisId: 'DX-001',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-002' },
   },
   {
@@ -31,6 +35,7 @@ export const mockMedications: MedicationRecord[] = [
     frequency: 'BID',
     route: 'oral',
     indication: 'Transplant immunosuppression',
+    relatedDiagnosisId: 'DX-002',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-003' },
   },
   {
@@ -42,10 +47,12 @@ export const mockMedications: MedicationRecord[] = [
     frequency: 'BID',
     route: 'oral',
     indication: 'Transplant immunosuppression',
+    relatedDiagnosisId: 'DX-002',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-004' },
   },
 
-  // PT-004
+  // PT-004 — antihypertensive present on the med list, but the source record does not
+  // document which condition it is prescribed for (demonstrates the "unknown indication" case).
   {
     id: 'MED-005',
     patientId: 'PT-004',
@@ -67,6 +74,7 @@ export const mockMedications: MedicationRecord[] = [
     frequency: 'QD',
     route: 'oral',
     indication: 'Chronic hepatitis B',
+    relatedDiagnosisId: 'DX-005',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-006' },
   },
 
@@ -79,6 +87,7 @@ export const mockMedications: MedicationRecord[] = [
     stopDate: '2022-08-15',
     route: 'IV',
     indication: 'Adjuvant chemotherapy, colonic adenocarcinoma',
+    relatedDiagnosisId: 'DX-008',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-007' },
   },
 
@@ -93,10 +102,11 @@ export const mockMedications: MedicationRecord[] = [
     frequency: 'QD',
     route: 'oral',
     indication: 'Hormone therapy, ER-positive breast carcinoma',
+    relatedDiagnosisId: 'DX-009',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-008' },
   },
 
-  // PT-010
+  // PT-010 — same "unknown indication" pattern as MED-005, on a different patient/case.
   {
     id: 'MED-009',
     patientId: 'PT-010',
@@ -118,6 +128,7 @@ export const mockMedications: MedicationRecord[] = [
     frequency: 'QD',
     route: 'oral',
     indication: 'Benign prostatic hyperplasia',
+    relatedDiagnosisId: 'DX-012',
     provenance: { sourceSystem: 'MOCK_EMR', sourceRecordId: 'MED-010' },
   },
 ];

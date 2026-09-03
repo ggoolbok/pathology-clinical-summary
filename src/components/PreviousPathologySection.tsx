@@ -1,5 +1,6 @@
 import type { PathologyRecord } from '../models';
 import { isSameOrRelatedOrgan } from '../services/relevance/organMatch';
+import { sortByDateDesc } from '../utils/sorting';
 import { DocumentIcon } from './PriorityTag';
 
 interface PreviousPathologySectionProps {
@@ -83,8 +84,14 @@ function PathologyTable({
  * priority regardless of organ" rule — it may represent metastasis.
  */
 export function PreviousPathologySection({ records, currentOrganSite, onOpenRecord }: PreviousPathologySectionProps) {
-  const sameOrRelated = records.filter((r) => r.isMalignant || isSameOrRelatedOrgan(r.organSite, currentOrganSite));
-  const other = records.filter((r) => !r.isMalignant && !isSameOrRelatedOrgan(r.organSite, currentOrganSite));
+  const sameOrRelated = sortByDateDesc(
+    records.filter((r) => r.isMalignant || isSameOrRelatedOrgan(r.organSite, currentOrganSite)),
+    (r) => r.diagnosisDate,
+  );
+  const other = sortByDateDesc(
+    records.filter((r) => !r.isMalignant && !isSameOrRelatedOrgan(r.organSite, currentOrganSite)),
+    (r) => r.diagnosisDate,
+  );
 
   return (
     <section>
