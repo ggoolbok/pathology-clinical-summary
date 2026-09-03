@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#fafafa"/>
+  <rect x="20" y="20" width="860" height="1160" fill="#ffffff" stroke="#c7d0da" stroke-width="2"/>
+  <text x="450" y="70" font-family="monospace" font-size="22" fill="#1f2937" text-anchor="middle" font-weight="bold">SYNTHETIC PLACEHOLDER IMAGE</text>
+  <text x="450" y="100" font-family="monospace" font-size="14" fill="#64748b" text-anchor="middle">No real patient data. For prototype demonstration only.</text>
+  <line x1="60" y1="130" x2="840" y2="130" stroke="#dde3ea" stroke-width="1"/>
+
+  <!-- schematic gel/electrophoresis lanes, purely decorative -->
+  <g stroke="#94a3b8" stroke-width="1" fill="none">
+    <rect x="80" y="180" width="740" height="420" fill="#f4f6f8"/>
+    <line x1="150" y1="180" x2="150" y2="600"/>
+    <line x1="260" y1="180" x2="260" y2="600"/>
+    <line x1="370" y1="180" x2="370" y2="600"/>
+    <line x1="480" y1="180" x2="480" y2="600"/>
+    <line x1="590" y1="180" x2="590" y2="600"/>
+    <line x1="700" y1="180" x2="700" y2="600"/>
+  </g>
+  <g fill="#334155">
+    <rect x="130" y="230" width="40" height="10" rx="3"/>
+    <rect x="130" y="310" width="40" height="14" rx="3"/>
+    <rect x="240" y="240" width="40" height="8" rx="3"/>
+    <rect x="240" y="330" width="40" height="10" rx="3"/>
+    <rect x="350" y="260" width="40" height="18" rx="3"/>
+    <rect x="460" y="235" width="40" height="9" rx="3"/>
+    <rect x="460" y="315" width="40" height="12" rx="3"/>
+    <rect x="570" y="250" width="40" height="10" rx="3"/>
+    <rect x="680" y="245" width="40" height="9" rx="3"/>
+    <rect x="680" y="325" width="40" height="11" rx="3"/>
+  </g>
+  <text x="150" y="620" font-family="monospace" font-size="12" fill="#64748b" text-anchor="middle">Ref</text>
+  <text x="260" y="620" font-family="monospace" font-size="12" fill="#64748b" text-anchor="middle">SPE</text>
+  <text x="370" y="620" font-family="monospace" font-size="12" fill="#64748b" text-anchor="middle">IgG</text>
+  <text x="480" y="620" font-family="monospace" font-size="12" fill="#64748b" text-anchor="middle">IgA</text>
+  <text x="590" y="620" font-family="monospace" font-size="12" fill="#64748b" text-anchor="middle">Kappa</text>
+  <text x="700" y="620" font-family="monospace" font-size="12" fill="#64748b" text-anchor="middle">Lambda</text>
+
+  <text x="60" y="680" font-family="monospace" font-size="13" fill="#1f2937">Interpretation (synthetic): pattern shown is schematic and</text>
+  <text x="60" y="700" font-family="monospace" font-size="13" fill="#1f2937">is not automatically interpreted by this application.</text>
+  <text x="60" y="720" font-family="monospace" font-size="13" fill="#1f2937">Please review the original scanned report for clinical use.</text>
+
+  <text x="450" y="1150" font-family="monospace" font-size="12" fill="#94a3b8" text-anchor="middle">Mock External Laboratory Report — Version 1 synthetic data set</text>
+</svg>
